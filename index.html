@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Ledger, production cost tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050505'/%3E%3Ctext x='32' y='44' font-family='Arial' font-size='36' font-weight='800' fill='%23a78bfa' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -238,6 +240,7 @@
     <button class="export-btn" id="export-btn" type="button">Export</button>
     <button class="export-btn" id="export-all-btn" type="button">Export all</button>
     <button class="export-btn" id="share-btn" type="button">Share</button>
+    <button class="export-btn" id="delete-month-btn" type="button">Delete month</button>
   </div>
   <div class="year-line" id="year-line"></div>
 </div>
@@ -308,8 +311,21 @@
   <button class="reset-btn" id="reset-btn" type="button">Reset sample data</button>
 </div>
 
+<div class="lock-overlay" id="welcome-overlay" hidden>
+  <div class="lock-card">
+    <h1>Ledger<span>.</span></h1>
+    <div class="lock-title" style="line-height:1.6">Track what you spend making your products,<br>and what you make selling them.</div>
+    <div class="summary-actions" style="flex-direction:column; margin-top:22px">
+      <button class="export-btn" id="welcome-empty-btn" type="button">Start with my own numbers</button>
+      <button class="export-btn" id="welcome-sample-btn" type="button">Look around with sample data</button>
+    </div>
+    <div class="calc-hint" style="margin-top:14px">Everything saves on this phone and works offline.</div>
+  </div>
+</div>
+
 <script>
 const COLORS = ['#a78bfa', '#4ade80', '#f59e0b', '#38bdf8', '#f87171', '#e879f9'];
+const DEMO_MODE = true; // demo build: sample data. The private app build ships with this set to false.
 const STORE_KEY = 'ledger-demo-v3';
 const OLD_KEY = 'ledger-demo-v2';
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -357,6 +373,12 @@ const DEFAULT_DATA = {
   },
 };
 
+function emptyData() {
+  const now = new Date();
+  const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  return { active: key, months: { [key]: { costs: [], sales: [] } }, sample: false, fresh: true };
+}
+
 function loadData() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY));
@@ -365,8 +387,9 @@ function loadData() {
     if (old && Array.isArray(old.costs)) {
       return { active: '2026-09', months: { '2026-09': old } };
     }
-  } catch (err) { /* corrupted storage falls through to sample data */ }
-  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  } catch (err) { /* corrupted storage falls through to first run */ }
+  if (DEMO_MODE) return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  return emptyData();
 }
 
 let data = loadData();
@@ -739,6 +762,9 @@ function render() {
   renderYear();
   renderSearchVis();
   document.getElementById('export-btn').textContent = 'Export ' + monthShort(data.active);
+  document.getElementById('delete-month-btn').hidden = sortedMonths().length <= 1;
+  const pill = document.querySelector('.sample-pill');
+  pill.style.display = (DEMO_MODE || data.sample) ? '' : 'none';
 }
 
 document.getElementById('cost-form').addEventListener('submit', e => {
@@ -779,7 +805,16 @@ document.getElementById('search').addEventListener('input', e => {
 document.getElementById('reset-btn').addEventListener('click', () => {
   localStorage.removeItem(STORE_KEY);
   localStorage.removeItem(OLD_KEY);
-  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  data = DEMO_MODE ? JSON.parse(JSON.stringify(DEFAULT_DATA)) : emptyData();
+  render();
+});
+
+document.getElementById('delete-month-btn').addEventListener('click', () => {
+  if (sortedMonths().length <= 1) return;
+  if (!confirm('Delete ' + monthLabel(data.active) + ' with all its costs and sales?')) return;
+  delete data.months[data.active];
+  data.active = sortedMonths()[sortedMonths().length - 1];
+  save();
   render();
 });
 
@@ -829,6 +864,27 @@ function importBackup(file) {
     }
   };
   reader.readAsText(file);
+}
+
+if (!DEMO_MODE && data.fresh) {
+  document.getElementById('welcome-overlay').hidden = false;
+  document.getElementById('welcome-sample-btn').addEventListener('click', () => {
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    data.sample = true;
+    save();
+    document.getElementById('welcome-overlay').hidden = true;
+    render();
+  });
+  document.getElementById('welcome-empty-btn').addEventListener('click', () => {
+    delete data.fresh;
+    save();
+    document.getElementById('welcome-overlay').hidden = true;
+    render();
+  });
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
 render();
