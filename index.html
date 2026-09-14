@@ -136,44 +136,6 @@
   .calc-field input:focus { outline: none; border-color: rgba(167, 139, 250, 0.55); }
   .calc-out { margin-top: 12px; font-size: 15px; font-weight: 700; line-height: 1.55; }
   .calc-hint { margin-top: 4px; font-size: 12px; color: var(--faint); }
-  .lock-overlay {
-    position: fixed; inset: 0; z-index: 50;
-    background: rgba(5, 5, 5, 0.9);
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-  }
-  .lock-card { width: 100%; max-width: 320px; text-align: center; }
-  .lock-card h1 { font-size: 30px; margin-bottom: 26px; }
-  .lock-title { font-size: 14px; color: var(--dim); margin-bottom: 14px; min-height: 21px; }
-  .pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 10px; }
-  .pin-dots i {
-    width: 14px; height: 14px; border-radius: 50%;
-    border: 1px solid var(--hairline); background: rgba(255, 255, 255, 0.05);
-    transition: background 0.12s ease-out, border-color 0.12s ease-out;
-  }
-  .pin-dots i.on { background: var(--accent); border-color: var(--accent); }
-  .pin-error { font-size: 12.5px; color: var(--red); min-height: 18px; margin-bottom: 8px; }
-  .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; }
-  .key {
-    min-height: 62px; border-radius: 18px; font-size: 22px; font-weight: 700;
-    background: rgba(255, 255, 255, 0.05); border: 1px solid var(--hairline); color: var(--text);
-    cursor: pointer; font-family: inherit;
-    transition: transform 0.08s ease-out, background 0.15s ease-out;
-  }
-  .key:active { transform: scale(0.94); background: rgba(124, 58, 237, 0.22); }
-  .key.muted { color: var(--faint); font-size: 17px; }
-  .lock-forgot {
-    background: none; border: none; color: var(--faint); font-size: 12px; cursor: pointer;
-    margin-top: 18px; padding: 10px; font-family: inherit; text-decoration: underline; text-underline-offset: 3px;
-  }
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-9px); }
-    75% { transform: translateX(9px); }
-  }
-  .shake { animation: shake 0.3s ease-out; }
   .cost-row {
     display: grid; grid-template-columns: 1fr auto 44px; gap: 8px; align-items: center;
     padding: 11px 0; border-bottom: 1px solid var(--hairline); font-size: 15px;
@@ -331,34 +293,19 @@
 </div>
 
 <div class="panel">
-  <h2>Security and backup</h2>
+  <h2>Backup and restore</h2>
   <div class="summary-actions" style="margin-top:0">
-    <button class="export-btn" id="pin-btn" type="button">Set PIN lock</button>
-    <button class="export-btn" id="lock-now-btn" type="button" hidden>Lock now</button>
-  </div>
-  <div class="summary-actions">
     <button class="export-btn" id="backup-btn" type="button">Backup data</button>
     <button class="export-btn" id="import-btn" type="button">Restore backup</button>
   </div>
   <input type="file" id="import-file" accept="application/json,.json" hidden>
-  <div class="calc-hint" id="sec-hint">The PIN stays on this phone only. A backup file restores everything on any phone.</div>
+  <div class="calc-hint" id="sec-hint">A backup file restores everything on any phone.</div>
 </div>
 
 <div class="site-footer">
   <p>Demo by <a href="https://adamcreates.netlify.app" target="_blank" rel="noopener">Adam Creates</a><br>
   Your real version saves to your phone automatically, works offline,<br>and nothing ever leaves your device.</p>
   <button class="reset-btn" id="reset-btn" type="button">Reset sample data</button>
-</div>
-
-<div class="lock-overlay" id="lock-overlay" hidden>
-  <div class="lock-card" id="lock-card">
-    <h1>Ledger<span>.</span></h1>
-    <div class="lock-title" id="lock-title">Enter your PIN</div>
-    <div class="pin-dots" id="pin-dots"><i></i><i></i><i></i><i></i></div>
-    <div class="pin-error" id="pin-error"></div>
-    <div class="keypad" id="keypad"></div>
-    <button class="lock-forgot" id="forgot-btn" type="button">Forgot PIN? Reset the app</button>
-  </div>
 </div>
 
 <script>
@@ -832,154 +779,16 @@ document.getElementById('search').addEventListener('input', e => {
 document.getElementById('reset-btn').addEventListener('click', () => {
   localStorage.removeItem(STORE_KEY);
   localStorage.removeItem(OLD_KEY);
-  localStorage.removeItem(PIN_KEY);
-  sessionStorage.removeItem(UNLOCK_KEY);
   data = JSON.parse(JSON.stringify(DEFAULT_DATA));
-  renderSecurity();
   render();
 });
 
-document.getElementById('pin-btn').addEventListener('click', () => openLock('set1'));
-document.getElementById('lock-now-btn').addEventListener('click', () => openLock('unlock'));
 document.getElementById('backup-btn').addEventListener('click', exportBackup);
 document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file').click());
 document.getElementById('import-file').addEventListener('change', e => {
   if (e.target.files && e.target.files[0]) importBackup(e.target.files[0]);
   e.target.value = '';
 });
-document.getElementById('forgot-btn').addEventListener('click', () => {
-  document.getElementById('lock-overlay').hidden = true;
-  document.getElementById('reset-btn').scrollIntoView({ behavior: REDUCED_MOTION ? 'auto' : 'smooth', block: 'center' });
-});
-document.addEventListener('keydown', e => {
-  if (document.getElementById('lock-overlay').hidden) return;
-  if (/^[0-9]$/.test(e.key)) pinDigit(e.key);
-  else if (e.key === 'Backspace') {
-    pinDraft = pinDraft.slice(0, -1);
-    paintDots();
-  }
-});
-
-const PIN_KEY = 'ledger-pin-v1';
-const UNLOCK_KEY = 'ledger-unlocked';
-const hashPin = pin => {
-  let h = 2166136261;
-  for (const ch of pin) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
-  return (h >>> 0).toString(16);
-};
-const getStoredPin = () => {
-  try { return JSON.parse(localStorage.getItem(PIN_KEY)); } catch { return null; }
-};
-let pinMode = null;
-let pinDraft = '';
-let pinFirst = '';
-
-function renderSecurity() {
-  const hasPin = !!getStoredPin();
-  document.getElementById('pin-btn').textContent = hasPin ? 'Change PIN' : 'Set PIN lock';
-  document.getElementById('lock-now-btn').hidden = !hasPin;
-  document.getElementById('sec-hint').textContent = hasPin
-    ? 'PIN on. It locks again when you close the page.'
-    : 'The PIN stays on this phone only. A backup file restores everything on any phone.';
-}
-
-function openLock(mode) {
-  pinMode = mode;
-  pinDraft = '';
-  pinFirst = '';
-  document.getElementById('lock-overlay').hidden = false;
-  document.getElementById('pin-error').textContent = '';
-  document.getElementById('lock-title').textContent =
-    mode === 'set1' ? 'Choose a 4-digit PIN' :
-    mode === 'set2' ? 'Repeat the PIN' : 'Enter your PIN';
-  paintDots();
-}
-
-function closeLock() {
-  document.getElementById('lock-overlay').hidden = true;
-  pinMode = null;
-}
-
-function paintDots() {
-  document.querySelectorAll('#pin-dots i').forEach((dot, i) => {
-    dot.className = i < pinDraft.length ? 'on' : '';
-  });
-}
-
-function lockError(msg) {
-  document.getElementById('pin-error').textContent = msg;
-  if (!REDUCED_MOTION) {
-    const card = document.getElementById('lock-card');
-    card.classList.remove('shake');
-    void card.offsetWidth;
-    card.classList.add('shake');
-  }
-  pinDraft = '';
-  paintDots();
-}
-
-function pinDigit(d) {
-  if (pinDraft.length >= 4) return;
-  pinDraft += d;
-  paintDots();
-  document.getElementById('pin-error').textContent = '';
-  if (pinDraft.length < 4) return;
-  setTimeout(() => {
-    if (pinMode === 'unlock') {
-      if (getStoredPin() && hashPin(pinDraft) === getStoredPin().hash) {
-        sessionStorage.setItem(UNLOCK_KEY, '1');
-        closeLock();
-      } else {
-        lockError('Wrong PIN. Try again.');
-      }
-    } else if (pinMode === 'set1') {
-      pinFirst = pinDraft;
-      pinMode = 'set2';
-      pinDraft = '';
-      paintDots();
-      document.getElementById('lock-title').textContent = 'Repeat the PIN';
-    } else if (pinMode === 'set2') {
-      if (pinDraft === pinFirst) {
-        localStorage.setItem(PIN_KEY, JSON.stringify({ hash: hashPin(pinDraft) }));
-        sessionStorage.setItem(UNLOCK_KEY, '1');
-        renderSecurity();
-        closeLock();
-      } else {
-        pinMode = 'set1';
-        pinFirst = '';
-        document.getElementById('lock-title').textContent = 'Choose a 4-digit PIN';
-        lockError('Did not match. Start over.');
-      }
-    }
-  }, 120);
-}
-
-function buildKeypad() {
-  const pad = document.getElementById('keypad');
-  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
-  keys.forEach(k => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'key' + (k === '' ? ' muted' : '');
-    if (k === 'back') {
-      b.textContent = '\u2329';
-      b.setAttribute('aria-label', 'Delete last digit');
-      b.addEventListener('click', () => {
-        pinDraft = pinDraft.slice(0, -1);
-        paintDots();
-      });
-    } else if (k === '') {
-      b.textContent = '';
-      b.disabled = true;
-      b.style.visibility = 'hidden';
-    } else {
-      b.textContent = k;
-      b.setAttribute('aria-label', k);
-      b.addEventListener('click', () => pinDigit(k));
-    }
-    pad.appendChild(b);
-  });
-}
 
 function exportBackup() {
   const payload = { app: 'ledger-demo', exported: new Date().toISOString(), data };
@@ -1020,12 +829,6 @@ function importBackup(file) {
     }
   };
   reader.readAsText(file);
-}
-
-buildKeypad();
-renderSecurity();
-if (getStoredPin() && sessionStorage.getItem(UNLOCK_KEY) !== '1') {
-  openLock('unlock');
 }
 
 render();
