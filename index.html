@@ -78,6 +78,64 @@
     font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--dim); margin-bottom: 6px;
   }
+  .month-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .month-chips::-webkit-scrollbar { display: none; }
+  .month-chip {
+    flex: 0 0 auto; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--hairline);
+    color: var(--dim); border-radius: 999px; padding: 10px 16px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; min-height: 44px;
+    transition: border-color 0.15s ease-out, color 0.15s ease-out, transform 0.1s ease-out;
+  }
+  .month-chip:active { transform: scale(0.96); }
+  .month-chip[aria-pressed="true"] {
+    color: #fff; border-color: rgba(167, 139, 250, 0.6); background: rgba(124, 58, 237, 0.18);
+  }
+  .month-chip.chip-new { color: var(--faint); border-style: dashed; }
+  .trend { display: flex; align-items: flex-end; gap: 18px; height: 76px; margin: 16px 4px 0; }
+  .trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .trend-bar {
+    width: 100%; max-width: 46px; border-radius: 8px 8px 3px 3px; min-height: 8px;
+    transition: height 0.5s var(--ease-out);
+  }
+  .trend-bar.up { background: linear-gradient(180deg, rgba(74, 222, 128, 0.9), rgba(74, 222, 128, 0.35)); }
+  .trend-bar.down { background: linear-gradient(180deg, rgba(248, 113, 113, 0.85), rgba(248, 113, 113, 0.3)); }
+  .trend-bar.current { outline: 1px solid rgba(255, 255, 255, 0.35); outline-offset: 2px; }
+  .trend-col .trend-label { font-size: 11px; color: var(--faint); }
+  .trend-col.is-current .trend-label { color: var(--text); font-weight: 600; }
+  .summary-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .export-btn {
+    flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--hairline); color: var(--text);
+    padding: 12px; border-radius: 13px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform 0.1s ease-out, background 0.15s ease-out;
+  }
+  .export-btn:active { transform: scale(0.975); background: rgba(255, 255, 255, 0.09); }
+  .year-line { margin-top: 12px; font-size: 12.5px; color: var(--faint); text-align: center; }
+  .year-line b { color: var(--dim); font-weight: 700; }
+  .search-wrap { margin-bottom: 14px; }
+  .search-input {
+    width: 100%; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--hairline);
+    color: var(--text); border-radius: 12px; padding: 12px 14px; font-size: 16px; font-family: inherit;
+    transition: border-color 0.15s ease-out;
+  }
+  .search-input::placeholder { color: var(--faint); }
+  .search-input:focus { outline: none; border-color: rgba(167, 139, 250, 0.55); }
+  .copy-btn {
+    margin-top: 10px; background: none; border: 1px dashed rgba(167, 139, 250, 0.45); color: var(--accent);
+    border-radius: 999px; padding: 11px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; min-height: 44px;
+    transition: transform 0.1s ease-out, background 0.15s ease-out;
+  }
+  .copy-btn:active { transform: scale(0.97); background: rgba(124, 58, 237, 0.14); }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .calc-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--dim); }
+  .calc-field input {
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--hairline); color: var(--text);
+    border-radius: 12px; padding: 12px; font-size: 16px; width: 100%; font-family: inherit;
+    transition: border-color 0.15s ease-out;
+  }
+  .calc-field input:focus { outline: none; border-color: rgba(167, 139, 250, 0.55); }
+  .calc-out { margin-top: 12px; font-size: 15px; font-weight: 700; line-height: 1.55; }
+  .calc-hint { margin-top: 4px; font-size: 12px; color: var(--faint); }
   .cost-row {
     display: grid; grid-template-columns: 1fr auto 44px; gap: 8px; align-items: center;
     padding: 11px 0; border-bottom: 1px solid var(--hairline); font-size: 15px;
@@ -168,6 +226,22 @@
   </div>
 </div>
 
+<div class="search-wrap" id="search-wrap" hidden>
+  <input id="search" class="search-input" placeholder="Search costs and sales" aria-label="Search costs and sales" maxlength="40">
+</div>
+
+<div class="panel">
+  <h2>Monthly summary</h2>
+  <div class="month-chips" id="month-chips" role="group" aria-label="Choose month"></div>
+  <div class="trend" id="trend" role="img" aria-label="Margin by month"></div>
+  <div class="summary-actions">
+    <button class="export-btn" id="export-btn" type="button">Export</button>
+    <button class="export-btn" id="export-all-btn" type="button">Export all</button>
+    <button class="export-btn" id="share-btn" type="button">Share</button>
+  </div>
+  <div class="year-line" id="year-line"></div>
+</div>
+
 <div class="panel">
   <h2>Production costs</h2>
   <div id="cost-list"></div>
@@ -194,6 +268,20 @@
 </div>
 
 <div class="panel">
+  <h2>Unit cost calculator</h2>
+  <div class="calc-grid">
+    <label class="calc-field">Units per batch
+      <input id="calc-units" type="number" inputmode="numeric" min="1" value="50">
+    </label>
+    <label class="calc-field">You sell each for
+      <input id="calc-price" type="number" inputmode="numeric" min="0" placeholder="br">
+    </label>
+  </div>
+  <div class="calc-out" id="calc-out">&nbsp;</div>
+  <div class="calc-hint" id="calc-hint"></div>
+</div>
+
+<div class="panel">
   <h2>Sales this month</h2>
   <div id="sales-list"></div>
   <form id="sale-form" class="entry-form" autocomplete="off">
@@ -212,66 +300,277 @@
 
 <script>
 const COLORS = ['#a78bfa', '#4ade80', '#f59e0b', '#38bdf8', '#f87171', '#e879f9'];
-const STORE_KEY = 'ledger-demo-v2';
-const DEFAULT_COSTS = [
-  { name: 'Flour, sugar and oil', amt: 4200, per: 'batch' },
-  { name: 'Packaging', amt: 1400, per: 'batch' },
-  { name: 'Transport and delivery', amt: 900, per: 'week' },
-  { name: 'Electricity', amt: 650, per: 'month' },
-];
-const DEFAULT_SALES = [
-  { name: 'Wholesale, corner shops', amt: 850, qty: 8 },
-  { name: 'Direct to customers', amt: 350, qty: 12 },
-];
+const STORE_KEY = 'ledger-demo-v3';
+const OLD_KEY = 'ledger-demo-v2';
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+const DEFAULT_DATA = {
+  active: '2026-09',
+  months: {
+    '2026-07': {
+      costs: [
+        { name: 'Flour, sugar and oil', amt: 4200, per: 'batch' },
+        { name: 'Packaging', amt: 1400, per: 'batch' },
+        { name: 'Transport and delivery', amt: 900, per: 'week' },
+        { name: 'Electricity', amt: 650, per: 'month' },
+      ],
+      sales: [
+        { name: 'Wholesale, corner shops', amt: 850, qty: 4 },
+        { name: 'Direct to customers', amt: 350, qty: 8 },
+      ],
+    },
+    '2026-08': {
+      costs: [
+        { name: 'Flour, sugar and oil', amt: 4000, per: 'batch' },
+        { name: 'Packaging', amt: 1200, per: 'batch' },
+        { name: 'Transport, market day', amt: 900, per: 'week' },
+        { name: 'Electricity', amt: 700, per: 'month' },
+      ],
+      sales: [
+        { name: 'Wholesale, corner shops', amt: 850, qty: 8 },
+        { name: 'Direct to customers', amt: 350, qty: 8 },
+      ],
+    },
+    '2026-09': {
+      costs: [
+        { name: 'Flour, sugar and oil', amt: 4200, per: 'batch' },
+        { name: 'Packaging', amt: 1400, per: 'batch' },
+        { name: 'Transport and delivery', amt: 900, per: 'week' },
+        { name: 'Electricity', amt: 650, per: 'month' },
+      ],
+      sales: [
+        { name: 'Wholesale, corner shops', amt: 850, qty: 8 },
+        { name: 'Direct to customers', amt: 350, qty: 12 },
+      ],
+    },
+  },
+};
 
 function loadData() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE_KEY));
-    if (saved && Array.isArray(saved.costs) && Array.isArray(saved.sales)) return saved;
+    if (saved && saved.months && saved.months[saved.active]) return saved;
+    const old = JSON.parse(localStorage.getItem(OLD_KEY));
+    if (old && Array.isArray(old.costs)) {
+      return { active: '2026-09', months: { '2026-09': old } };
+    }
   } catch (err) { /* corrupted storage falls through to sample data */ }
-  return { costs: DEFAULT_COSTS.slice(), sales: DEFAULT_SALES.slice() };
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 
 let data = loadData();
 const save = () => localStorage.setItem(STORE_KEY, JSON.stringify(data));
 const fmt = n => Number(n).toLocaleString('en-US') + ' br';
+const fmt2 = n => Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' br';
 const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+const monthKeyOf = key => ({ y: key.slice(0, 4), m: +key.slice(5, 7) });
+const monthLabel = key => {
+  const { y, m } = monthKeyOf(key);
+  return MONTH_NAMES[m - 1] + ' ' + y;
+};
+const monthShort = key => MONTH_NAMES[+key.slice(5, 7) - 1].slice(0, 3);
+const marginOf = m => m.sales.reduce((s, x) => s + x.amt * x.qty, 0) -
+  m.costs.reduce((s, x) => s + x.amt, 0);
+const sortedMonths = () => Object.keys(data.months).sort();
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function animateNumber(el, to) {
   const from = Number(el.dataset.v || 0);
   el.dataset.v = to;
-  if (from === to) { el.textContent = fmt(to); return; }
+  // cancel any chain still running on this element (fast month switches)
+  if (el._countToken) el._countToken.cancelled = true;
+  const token = { cancelled: false };
+  el._countToken = token;
+  const finish = () => { el.textContent = fmt(to); };
+  if (from === to || REDUCED_MOTION || document.hidden) { finish(); return; }
   const start = performance.now();
   const DURATION = 450;
   function step(now) {
+    if (token.cancelled) return;
     const t = Math.min((now - start) / DURATION, 1);
     el.textContent = fmt(Math.round(from + (to - from) * easeOutCubic(t)));
     if (t < 1) requestAnimationFrame(step);
+    else finish();
   }
   requestAnimationFrame(step);
+}
+
+function renderChips() {
+  const wrap = document.getElementById('month-chips');
+  wrap.innerHTML = '';
+  sortedMonths().forEach(key => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'month-chip';
+    b.textContent = monthLabel(key);
+    b.setAttribute('aria-pressed', String(key === data.active));
+    b.addEventListener('click', () => { data.active = key; save(); render(); });
+    wrap.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.type = 'button';
+  add.className = 'month-chip chip-new';
+  add.textContent = '+ New month';
+  add.addEventListener('click', () => {
+    const last = sortedMonths()[sortedMonths().length - 1];
+    const { y, m } = monthKeyOf(last);
+    const nextKey = m === 12 ? (y + 1) + '-01' : y + '-' + String(m + 1).padStart(2, '0');
+    if (!data.months[nextKey]) data.months[nextKey] = { costs: [], sales: [] };
+    data.active = nextKey;
+    save();
+    render();
+  });
+  wrap.appendChild(add);
+}
+
+function renderTrend() {
+  const trend = document.getElementById('trend');
+  trend.innerHTML = '';
+  const keys = sortedMonths();
+  const margins = keys.map(k => ({ key: k, margin: marginOf(data.months[k]) }));
+  const maxAbs = Math.max(...margins.map(x => Math.abs(x.margin)), 1);
+  margins.forEach(({ key, margin }) => {
+    const col = document.createElement('div');
+    col.className = 'trend-col' + (key === data.active ? ' is-current' : '');
+    const bar = document.createElement('div');
+    bar.className = 'trend-bar ' + (margin < 0 ? 'down' : 'up') +
+      (key === data.active ? ' current' : '');
+    const h = margin < 0 ? 10 : Math.max(12, Math.round(Math.abs(margin) / maxAbs * 100));
+    bar.style.height = h + '%';
+    bar.setAttribute('title', monthLabel(key) + ': ' + fmt(margin));
+    const label = document.createElement('div');
+    label.className = 'trend-label';
+    label.textContent = monthShort(key);
+    col.append(bar, label);
+    trend.appendChild(col);
+  });
+  trend.setAttribute('aria-label',
+    'Margin by month: ' + margins.map(x => monthShort(x.key) + ' ' + fmt(x.margin)).join(', '));
+}
+
+const csvEsc = v => {
+  const s = String(v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+function downloadCsv(filename, rows) {
+  const csv = rows.map(r => r.map(csvEsc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 800);
+}
+
+function exportCsv() {
+  const m = data.months[data.active];
+  const rows = [['type', 'name', 'amount_br', 'qty', 'cadence']];
+  m.costs.forEach(c => rows.push(['cost', c.name, c.amt, '', c.per]));
+  m.sales.forEach(s => rows.push(['sale', s.name, s.amt, s.qty, '']));
+  downloadCsv('ledger-' + data.active + '.csv', rows);
+}
+
+function exportAllCsv() {
+  const rows = [['type', 'month', 'name', 'amount_br', 'qty', 'cadence']];
+  sortedMonths().forEach(key => {
+    const m = data.months[key];
+    m.costs.forEach(c => rows.push(['cost', key, c.name, c.amt, '', c.per]));
+    m.sales.forEach(s => rows.push(['sale', key, s.name, s.amt, s.qty, '']));
+  });
+  downloadCsv('ledger-all-months.csv', rows);
+}
+
+function shareSummary() {
+  const cur = data.months[data.active];
+  const totalCost = cur.costs.reduce((s, c) => s + c.amt, 0);
+  const totalSales = cur.sales.reduce((s, x) => s + x.amt * x.qty, 0);
+  const items = cur.sales.reduce((s, x) => s + x.qty, 0);
+  const margin = totalSales - totalCost;
+  const keys = sortedMonths();
+  const idx = keys.indexOf(data.active);
+  let deltaText = '';
+  if (idx > 0) {
+    const diff = margin - marginOf(data.months[keys[idx - 1]]);
+    deltaText = (diff >= 0 ? 'up ' : 'down ') + fmt(Math.abs(diff)) + ' vs ' + monthShort(keys[idx - 1]);
+  }
+  const lines = [
+    'Ledger, ' + monthLabel(data.active) + ':',
+    'Costs ' + fmt(totalCost) + ' (' + cur.costs.length + ' lines)',
+    'Sales ' + fmt(totalSales) + ' (' + items + ' items)',
+    'Margin ' + (margin < 0 ? '' : '+') + fmt(margin) + (deltaText ? ' (' + deltaText + ')' : ''),
+  ];
+  const text = lines.join('\n');
+  const btn = document.getElementById('share-btn');
+  const confirmCopied = () => {
+    btn.textContent = 'Copied';
+    setTimeout(() => { btn.textContent = 'Share'; }, 1200);
+  };
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(confirmCopied).catch(() => {});
+  }
 }
 
 function renderCosts() {
   const list = document.getElementById('cost-list');
   list.innerHTML = '';
-  if (!data.costs.length) {
-    list.innerHTML = '<div class="empty-hint">No costs yet. Add your first one below.</div>';
+  const costs = data.months[data.active].costs;
+  if (!costs.length) {
+    list.innerHTML = '';
+    const hint = document.createElement('div');
+    hint.className = 'empty-hint';
+    hint.textContent = searchTerm
+      ? 'Nothing matches your search.'
+      : 'No costs yet for ' + monthLabel(data.active) + '.';
+    list.appendChild(hint);
+    if (!searchTerm) {
+      const keys = sortedMonths();
+      const idx = keys.indexOf(data.active);
+      let prevKey = null;
+      for (let p = idx - 1; p >= 0; p--) {
+        if (data.months[keys[p]].costs.length) { prevKey = keys[p]; break; }
+      }
+      if (prevKey) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy ' + data.months[prevKey].costs.length +
+          ' costs from ' + monthShort(prevKey);
+        btn.addEventListener('click', () => {
+          data.months[prevKey].costs.forEach(c => data.months[data.active].costs.push({ ...c }));
+          save();
+          render();
+        });
+        list.appendChild(btn);
+      }
+    }
     return;
   }
-  data.costs.forEach((c, i) => {
+  costs.forEach((c, i) => {
+    if (searchTerm && !c.name.toLowerCase().includes(searchTerm)) return;
     const row = document.createElement('div');
     row.className = 'cost-row';
     row.style.animationDelay = Math.min(i * 45, 240) + 'ms';
     row.innerHTML =
       '<div><div class="name"></div><div class="per"></div></div>' +
       '<div class="amt"></div>' +
-      '<button class="remove-btn" type="button" aria-label="Remove ' + c.name.replace(/"/g, '') + '">×</button>';
+      '<button class="remove-btn" type="button" aria-label="Remove">×</button>';
     row.querySelector('.name').textContent = c.name;
     row.querySelector('.per').textContent = 'per ' + c.per;
     row.querySelector('.amt').textContent = fmt(c.amt);
     row.querySelector('.remove-btn').addEventListener('click', () => {
       row.classList.add('leaving');
-      setTimeout(() => { data.costs.splice(i, 1); save(); render(); }, 180);
+      setTimeout(() => {
+        data.months[data.active].costs.splice(i, 1);
+        save();
+        render();
+      }, 180);
     });
     list.appendChild(row);
   });
@@ -280,11 +579,15 @@ function renderCosts() {
 function renderSales() {
   const list = document.getElementById('sales-list');
   list.innerHTML = '';
-  if (!data.sales.length) {
-    list.innerHTML = '<div class="empty-hint">No sales yet. Add your first one below.</div>';
+  const sales = data.months[data.active].sales;
+  if (!sales.length) {
+    list.innerHTML = '<div class="empty-hint">' + (searchTerm
+      ? 'Nothing matches your search.'
+      : 'No sales yet for ' + monthLabel(data.active) + '. Add your first one below.</div>');
     return;
   }
-  data.sales.forEach((s, i) => {
+  sales.forEach((s, i) => {
+    if (searchTerm && !s.name.toLowerCase().includes(searchTerm)) return;
     const row = document.createElement('div');
     row.className = 'sale-row';
     row.style.animationDelay = Math.min(i * 45, 240) + 'ms';
@@ -299,8 +602,9 @@ function renderSales() {
 }
 
 function renderTotals() {
-  const totalCost = data.costs.reduce((sum, c) => sum + c.amt, 0);
-  const totalSales = data.sales.reduce((sum, s) => sum + s.amt * s.qty, 0);
+  const cur = data.months[data.active];
+  const totalCost = cur.costs.reduce((sum, c) => sum + c.amt, 0);
+  const totalSales = cur.sales.reduce((sum, s) => sum + s.amt * s.qty, 0);
   const margin = totalSales - totalCost;
 
   animateNumber(document.getElementById('kpi-costs'), totalCost);
@@ -310,21 +614,33 @@ function renderTotals() {
   const marginEl = document.getElementById('kpi-margin');
   marginEl.className = 'value ' + (margin < 0 ? 'red' : 'green');
   document.getElementById('kpi-margin-sub').textContent =
-    (margin < 0 ? 'losing ' : '') + (totalSales ? Math.round(Math.abs(margin) / totalSales * 100) + '% of sales' : '');
+    (margin < 0 ? 'losing ' : '') +
+    (totalSales ? Math.round(Math.abs(margin) / totalSales * 100) + '% of sales' : '');
   document.getElementById('kpi-costs-sub').textContent =
-    data.costs.length ? data.costs.length + ' cost line' + (data.costs.length > 1 ? 's' : '') : '';
+    cur.costs.length ? cur.costs.length + ' cost line' + (cur.costs.length > 1 ? 's' : '') : '';
   document.getElementById('kpi-sales-sub').textContent =
-    data.sales.reduce((sum, s) => sum + s.qty, 0) + ' items sold';
+    cur.sales.reduce((sum, s) => sum + s.qty, 0) + ' items sold';
+
+  const keys = sortedMonths();
+  const idx = keys.indexOf(data.active);
+  if (idx > 0) {
+    const prevMargin = marginOf(data.months[keys[idx - 1]]);
+    const diff = margin - prevMargin;
+    document.getElementById('kpi-margin-sub').textContent =
+      (diff >= 0 ? 'up ' : 'down ') + fmt(Math.abs(diff)) + ' vs ' + monthShort(keys[idx - 1]);
+  } else {
+    document.getElementById('kpi-margin-sub').textContent = 'first month';
+  }
 
   const bar = document.getElementById('bar');
   const legend = document.getElementById('legend');
   const insight = document.getElementById('insight');
   const empty = document.getElementById('breakdown-empty');
-  document.getElementById('breakdown-area').hidden = !data.costs.length;
-  empty.hidden = !!data.costs.length;
+  document.getElementById('breakdown-area').hidden = !cur.costs.length;
+  empty.hidden = !!cur.costs.length;
   bar.innerHTML = ''; legend.innerHTML = ''; insight.innerHTML = '';
   let biggest = null;
-  data.costs.forEach((c, i) => {
+  cur.costs.forEach((c, i) => {
     if (!biggest || c.amt > biggest.amt) biggest = c;
     const seg = document.createElement('i');
     seg.style.background = COLORS[i % COLORS.length];
@@ -347,11 +663,77 @@ function renderTotals() {
   }
 }
 
-function render() { renderCosts(); renderSales(); renderTotals(); }
+let searchTerm = '';
+
+function renderCalc() {
+  const cur = data.months[data.active];
+  const batchCosts = cur.costs.filter(c => c.per === 'batch');
+  const basis = batchCosts.reduce((s, c) => s + c.amt, 0);
+  const out = document.getElementById('calc-out');
+  const hint = document.getElementById('calc-hint');
+  const units = Math.max(0, Math.round(+document.getElementById('calc-units').value || 0));
+  const price = Math.max(0, +document.getElementById('calc-price').value || 0);
+  if (!batchCosts.length) {
+    out.textContent = 'Add a per-batch cost and this works out your cost per unit.';
+    hint.textContent = '';
+    return;
+  }
+  if (!units) {
+    out.textContent = 'Enter units per batch to see your cost per unit.';
+    hint.textContent = 'Based on ' + fmt(basis) + ' of per-batch costs.';
+    return;
+  }
+  const cpu = basis / units;
+  let text = 'Each unit costs about ' + fmt2(cpu) + ' to make';
+  if (price > 0) {
+    const profit = price - cpu;
+    const pct = Math.round(profit / price * 100);
+    text += ' \u00b7 you keep ' + fmt2(profit) + ' per unit (' + pct + '% margin)';
+  }
+  out.textContent = text;
+  hint.textContent = 'Based on ' + fmt(basis) + ' of per-batch costs this month.';
+}
+
+function renderYear() {
+  const el = document.getElementById('year-line');
+  const keys = sortedMonths();
+  let totalCost = 0;
+  let totalSales = 0;
+  keys.forEach(k => {
+    const m = data.months[k];
+    totalCost += m.costs.reduce((s, c) => s + c.amt, 0);
+    totalSales += m.sales.reduce((s, x) => s + x.amt * x.qty, 0);
+  });
+  const margin = totalSales - totalCost;
+  el.innerHTML = '';
+  el.append('All ' + keys.length + ' months: costs ' + fmt(totalCost) +
+    ' \u00b7 sales ' + fmt(totalSales) + ' \u00b7 ');
+  const b = document.createElement('b');
+  b.textContent = 'margin ' + (margin < 0 ? '' : '+') + fmt(margin);
+  el.appendChild(b);
+}
+
+function renderSearchVis() {
+  const cur = data.months[data.active];
+  const n = cur.costs.length + cur.sales.length;
+  document.getElementById('search-wrap').hidden = n <= 6;
+}
+
+function render() {
+  renderChips();
+  renderTrend();
+  renderCosts();
+  renderSales();
+  renderTotals();
+  renderCalc();
+  renderYear();
+  renderSearchVis();
+  document.getElementById('export-btn').textContent = 'Export ' + monthShort(data.active);
+}
 
 document.getElementById('cost-form').addEventListener('submit', e => {
   e.preventDefault();
-  data.costs.push({
+  data.months[data.active].costs.push({
     name: document.getElementById('c-name').value.trim(),
     amt: Math.round(+document.getElementById('c-amt').value),
     per: document.getElementById('c-per').value,
@@ -363,7 +745,7 @@ document.getElementById('cost-form').addEventListener('submit', e => {
 
 document.getElementById('sale-form').addEventListener('submit', e => {
   e.preventDefault();
-  data.sales.push({
+  data.months[data.active].sales.push({
     name: document.getElementById('s-name').value.trim(),
     amt: Math.round(+document.getElementById('s-amt').value),
     qty: Math.max(1, Math.round(+document.getElementById('s-qty').value)),
@@ -373,9 +755,21 @@ document.getElementById('sale-form').addEventListener('submit', e => {
   render();
 });
 
+document.getElementById('export-btn').addEventListener('click', exportCsv);
+document.getElementById('export-all-btn').addEventListener('click', exportAllCsv);
+document.getElementById('share-btn').addEventListener('click', shareSummary);
+document.getElementById('calc-units').addEventListener('input', renderCalc);
+document.getElementById('calc-price').addEventListener('input', renderCalc);
+document.getElementById('search').addEventListener('input', e => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  renderCosts();
+  renderSales();
+});
+
 document.getElementById('reset-btn').addEventListener('click', () => {
   localStorage.removeItem(STORE_KEY);
-  data = { costs: DEFAULT_COSTS.slice(), sales: DEFAULT_SALES.slice() };
+  localStorage.removeItem(OLD_KEY);
+  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
   render();
 });
 
