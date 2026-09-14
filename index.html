@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Production Cost Tracker</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --line: #262a33;
+    --text: #f2f3f5;
+    --dim: #9aa0ab;
+    --green: #4ade80;
+    --red: #f87171;
+    --accent: #8b5cf6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  h1 { font-size: 20px; letter-spacing: 0.3px; }
+  h1 span { color: var(--accent); }
+  .tag { font-size: 11px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .card .label { font-size: 11px; color: var(--dim); margin-bottom: 4px; }
+  .card .value { font-size: 15px; font-weight: 700; }
+  .card .value.green { color: var(--green); }
+  .card .value.red { color: var(--red); }
+  .section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .section h2 { font-size: 14px; margin-bottom: 10px; color: var(--dim); font-weight: 600; }
+  .row { display: grid; grid-template-columns: 1fr 90px 84px 30px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .row:last-child { border-bottom: none; }
+  .row .name { font-weight: 600; }
+  .row .per { color: var(--dim); font-size: 11px; }
+  .row .amt { text-align: right; font-weight: 600; }
+  .row .del { background: none; border: none; color: var(--dim); font-size: 15px; cursor: pointer; }
+  form { display: grid; grid-template-columns: 1fr 90px 84px; gap: 8px; margin-top: 10px; }
+  input, select {
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    border-radius: 9px; padding: 9px 10px; font-size: 13px; width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  button.add {
+    grid-column: 1 / -1; background: var(--accent); border: none; color: white;
+    padding: 10px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .sales-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .sales-row:last-child { border-bottom: none; }
+  .price { font-size: 12px; color: var(--dim); }
+  .footnote { font-size: 11px; color: var(--dim); text-align: center; margin-top: 18px; line-height: 1.6; }
+  .bar-wrap { margin-top: 10px; }
+  .bar { height: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; display: flex; margin-top: 6px; }
+  .bar i { display: block; height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--dim); }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ledger<span>.</span></h1>
+  <div class="tag">DEMO</div>
+</header>
+
+<div class="cards">
+  <div class="card"><div class="label">This month</div><div class="value" id="kpi-total">—</div></div>
+  <div class="card"><div class="label">Sold</div><div class="value green" id="kpi-sales">—</div></div>
+  <div class="card"><div class="label">Margin</div><div class="value" id="kpi-margin">—</div></div>
+</div>
+
+<div class="section">
+  <h2>Production costs</h2>
+  <div id="cost-list"></div>
+  <form id="cost-form">
+    <input id="c-name" placeholder="What did you spend on?" required>
+    <input id="c-amt" type="number" min="1" placeholder="Birr" required>
+    <select id="c-per">
+      <option value="batch">per batch</option>
+      <option value="month">per month</option>
+      <option value="week">per week</option>
+    </select>
+    <button class="add" type="submit">+ Add cost</button>
+  </form>
+</div>
+
+<div class="section">
+  <h2>Where the money goes</h2>
+  <div class="bar-wrap">
+    <div class="bar" id="bar"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Sales this month</h2>
+  <div id="sales-list"></div>
+  <form id="sale-form">
+    <input id="s-name" placeholder="What did you sell?" required>
+    <input id="s-amt" type="number" min="1" placeholder="Birr" required>
+    <input id="s-qty" type="number" min="1" placeholder="Qty" required>
+    <button class="add" type="submit">+ Add sale</button>
+  </form>
+</div>
+
+<div class="footnote">
+  Demo by Adam Creates · your real version saves to your phone automatically<br>
+  works offline · nothing leaves your device
+</div>
+
+<script>
+const COLORS = ['#8b5cf6','#4ade80','#f59e0b','#38bdf8','#f87171','#e879f9'];
+const DEFAULT_COSTS = [
+  { name: 'Flour + sugar + oil', amt: 4200, per: 'batch' },
+  { name: 'Packaging', amt: 1400, per: 'batch' },
+  { name: 'Transport / delivery', amt: 900, per: 'week' },
+  { name: 'Electricity', amt: 650, per: 'month' },
+];
+const DEFAULT_SALES = [
+  { name: 'Wholesale — corner shop', amt: 180, qty: 3 },
+  { name: 'Direct — customers', amt: 95, qty: 7 },
+];
+
+const load = () => {
+  try { return JSON.parse(localStorage.getItem('ledger-demo')) || null; } catch { return null; }
+};
+let data = load() || { costs: DEFAULT_COSTS, sales: DEFAULT_SALES };
+const save = () => localStorage.setItem('ledger-demo', JSON.stringify(data));
+const fmt = n => Number(n).toLocaleString('en-US') + ' br';
+
+function render() {
+  const list = document.getElementById('cost-list');
+  list.innerHTML = '';
+  data.costs.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `<div><div class="name">${c.name}</div><div class="per">per ${c.per}</div></div>
+      <div class="amt">${fmt(c.amt)}</div><div></div><button class="del" data-i="${i}">×</button>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll('.del').forEach(b => b.onclick = () => {
+    data.costs.splice(+b.dataset.i, 1); save(); render();
+  });
+
+  const sl = document.getElementById('sales-list');
+  sl.innerHTML = '';
+  data.sales.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'sales-row';
+    div.innerHTML = `<div>${s.name}<div class="price">${s.qty} × ${fmt(s.amt)}</div></div>
+      <div class="amt">${fmt(s.amt * s.qty)}</div>`;
+    sl.appendChild(div);
+  });
+
+  const totalCost = data.costs.reduce((a, c) => a + c.amt, 0);
+  const totalSales = data.sales.reduce((a, s) => a + s.amt * s.qty, 0);
+  const margin = totalSales - totalCost;
+  document.getElementById('kpi-total').textContent = fmt(totalCost);
+  document.getElementById('kpi-sales').textContent = fmt(totalSales);
+  const m = document.getElementById('kpi-margin');
+  m.textContent = (margin < 0 ? '' : '+') + fmt(margin);
+  m.className = 'value ' + (margin < 0 ? 'red' : 'green');
+
+  const bar = document.getElementById('bar');
+  const legend = document.getElementById('legend');
+  bar.innerHTML = ''; legend.innerHTML = '';
+  data.costs.forEach((c, i) => {
+    const pct = totalCost ? (c.amt / totalCost * 100) : 0;
+    const seg = document.createElement('i');
+    seg.style.width = pct + '%';
+    seg.style.background = COLORS[i % COLORS.length];
+    bar.appendChild(seg);
+    const item = document.createElement('span');
+    item.innerHTML = `<i style="background:${COLORS[i % COLORS.length]}"></i>${c.name}`;
+    legend.appendChild(item);
+  });
+}
+
+document.getElementById('cost-form').onsubmit = e => {
+  e.preventDefault();
+  data.costs.push({
+    name: document.getElementById('c-name').value.trim(),
+    amt: +document.getElementById('c-amt').value,
+    per: document.getElementById('c-per').value,
+  });
+  e.target.reset(); save(); render();
+};
+document.getElementById('sale-form').onsubmit = e => {
+  e.preventDefault();
+  data.sales.push({
+    name: document.getElementById('s-name').value.trim(),
+    amt: +document.getElementById('s-amt').value,
+    qty: +document.getElementById('s-qty').value,
+  });
+  e.target.reset(); save(); render();
+};
+render();
+</script>
+</body>
+</html>
